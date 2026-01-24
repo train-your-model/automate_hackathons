@@ -56,17 +56,16 @@ class PathDump:
             full_path = os.path.join(func_dir, "templates")
             return full_path
 
-    @staticmethod
-    def paths_dump():
+    def paths_dump(self):
         config = {
             "defaults":{
-                "download_dir":PathDump.get_download_path(),
-                "parent_dir":PathDump.get_desktop_path(),
-                "templates_dir":PathDump.get_templates_path()
+                "download_dir":self.get_download_path(),
+                "parent_dir":self.get_desktop_path(),
+                "templates_dir":self.get_templates_path()
             },
             "json_files":{
-                "site_names":PathDump.get_site_names_file_path(),
-                "templates_names":PathDump.get_templates_names_file_path()
+                "site_names":self.get_site_names_file_path(),
+                "templates_names":self.get_templates_names_file_path()
             }
         }
         func_dir = Path(__file__).resolve().parents[1]
@@ -76,8 +75,9 @@ class PathDump:
             f.close()
 
     def run(self):
-        PathDump.paths_dump()
+        self.paths_dump()
         return self
+
 
 def yaml_path_dump():
     func_dir = Path(__file__).resolve().parents[1]
@@ -94,7 +94,19 @@ def yaml_path_dump():
         state = json.load(f)
         if state['yaml_path'] is None:
             with open(json_file_path, "w") as d:
-                json.dump({state['yaml_path']: config_file_path}, d)
+                json.dump({'yaml_path': config_file_path}, d)
                 d.close()
             print("YAML Filepath has been updated successfully in the JSON file")
+        f.close()
+
+
+def create_config_json():
+    """"
+    Creates the JSON file which would save the paths for YAML file, API tokens
+    """
+    func_dir = Path(__file__).resolve().parents[1]
+    json_file_path = os.path.join(func_dir, "files", "config.json")
+
+    with open(json_file_path, "w") as f:
+        json.dump({"yaml_path": None}, f, indent=2)
         f.close()
