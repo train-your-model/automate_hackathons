@@ -29,6 +29,7 @@ def build_parser():
 
     return p
 
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
@@ -38,6 +39,7 @@ def main(argv=None):
 
     if args.command == "path_setup":
         sp.PathDump().paths_dump()
+        sp.create_config_json()
         sp.yaml_path_dump()
 
 
