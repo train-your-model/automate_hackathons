@@ -8,6 +8,7 @@ import yaml
 from pathlib import Path
 
 
+# C1
 class PathDump:
 
     def __init__(self):
@@ -66,7 +67,8 @@ class PathDump:
             "json_files":{
                 "site_names":self.get_site_names_file_path(),
                 "templates_names":self.get_templates_names_file_path()
-            }
+            },
+            "site_dirs":{}
         }
         func_dir = Path(__file__).resolve().parents[1]
         config_file_path = os.path.join(func_dir, "files", "config.yaml")
@@ -78,35 +80,27 @@ class PathDump:
         self.paths_dump()
         return self
 
-
-def yaml_path_dump():
-    func_dir = Path(__file__).resolve().parents[1]
-    config_file_path = os.path.join(func_dir, "files", "config.yaml")
-
-    # Creating a Blank YAML file
-    with open(config_file_path, "w"):
-        pass
-
-    json_file_path = os.path.join(func_dir, "files", "config.json")
-
-    # Dumping the file path to the JSON file
-    with open(json_file_path, 'r') as f:
-        state = json.load(f)
-        if state['yaml_path'] is None:
-            with open(json_file_path, "w") as d:
-                json.dump({'yaml_path': config_file_path}, d)
-                d.close()
-            print("YAML Filepath has been updated successfully in the JSON file")
-        f.close()
-
-
-def create_config_json():
-    """"
-    Creates the JSON file which would save the paths for YAML file, API tokens
+# F1
+def create_root_dir():
+    """
+    Creates the root directory in the parent directory where the hackathon specific dirs would
+    be stored.
     """
     func_dir = Path(__file__).resolve().parents[1]
-    json_file_path = os.path.join(func_dir, "files", "config.json")
+    y_path = os.path.join(func_dir, "files", "config.yaml")
 
-    with open(json_file_path, "w") as f:
-        json.dump({"yaml_path": None}, f, indent=2)
-        f.close()
+    with open(y_path, 'r') as y:
+        data = yaml.safe_load(y)
+
+        par_dir = data["defaults"]["parent_dir"]
+        root_dir_name = str(input("Enter the name for the root directory: "))
+        full_path = os.path.join(par_dir, root_dir_name)
+        os.mkdir(full_path)
+        print("Root Directory has been created successfully!!")
+
+        # Appending the Root Directory Path to the YAML file
+        data.setdefault("defaults", {})["root_dir_path"] = full_path
+        with open(y_path, "w") as f:
+            yaml.safe_dump(data, f, sort_keys=False)
+
+        print("YAML file has been updated with the ROOT Directory")

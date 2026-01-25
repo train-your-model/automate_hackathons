@@ -3,4 +3,6 @@
 
 # Configuration Files
 /files/config.yaml
-/files/config.json
+
+# API Files
+/files/.kaggle
