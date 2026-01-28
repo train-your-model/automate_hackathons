@@ -6,3 +6,6 @@
 
 # API Files
 /files/.kaggle
+
+# Custom Environment
+/.venv

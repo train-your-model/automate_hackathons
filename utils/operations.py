@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import yaml
 
+from utils import api
 
 class NormOps:
     """
@@ -18,6 +19,7 @@ class NormOps:
 
     # Parameters
     yaml_file_path = ""
+    json_file_path = ""
 
     def __init__(self, site_abv):
         self.site_abv = site_abv
@@ -37,13 +39,18 @@ class NormOps:
         except json.JSONDecodeError:
             with open(self.site_json_path, "w") as j:
                 self.site_name = str(input("Enter the Full Name of the Hackathon Site: "))
-                j.write(f"{str(self.site_abv).upper()}:{str(self.site_name).upper()}")
+                j.write(f"{str(self.site_abv).upper()}:{str(self.site_name)}")
                 self.new_site = 1
 
         else:
-            if self.site_name not in data.keys():
+            if self.site_abv not in data.keys():
                 self.new_site = 1
-                data.update({str(self.site_abv).upper():str(self.site_name).upper()})
+                self.site_name = str(input("Enter the Full Name of the Hackathon Site: "))
+                data.update({str(self.site_abv).upper():str(self.site_name)})
+
+                with open(self.site_json_path, "w") as j:
+                    json.dump(data, j)
+
                 print("SITE JSON FILE has been updated with the New Site Name")
 
             else:
@@ -53,8 +60,9 @@ class NormOps:
         func_dir = Path(__file__).resolve().parents[1]
         yaml_file_path = os.path.join(func_dir, "files", "config.yaml")
         with open(yaml_file_path, 'r') as y:
-            self.site_json_path = yaml.safe_load(y)["json_files"]["site_names"]
-            self.templates_dir_path = yaml.safe_load(y)["json_files"]["templates_names"]
+            data = yaml.safe_load(y)
+            self.site_json_path = data["json_files"]["site_names"]
+            self.templates_dir_path = data["json_files"]["templates_names"]
 
         NormOps.yaml_file_path = yaml_file_path
 
@@ -64,7 +72,7 @@ class NormOps:
         """
         with open(NormOps.yaml_file_path, "r") as f:
             data = yaml.safe_load(f)
-            root_dir = data["defaults"]["root_dir"]
+            root_dir = data["defaults"]["root_dir_path"]
             full_path = os.path.join(root_dir, self.site_name)
             os.mkdir(full_path)
 
@@ -83,19 +91,30 @@ class NormOps:
             data = yaml.safe_load(f)
             site_path = data["site_dirs"][self.site_name]
             self.proj_dir_path = os.path.join(site_path, proj_dir_name)
+            os.mkdir(self.proj_dir_path)
 
-    def run(self, proj_name, api=None):
+    def run(self, proj_name, url=None):
         self.get_paths()
         self.check_site_names()
 
-        if (self.new_site == 1) and (api is not None):
+        if (self.new_site == 1) and (url is not None):
             self.create_site_dir()
             self.create_proj_dir(proj_dir_name=proj_name)
+            api.ApiRunner(site_abv=self.site_abv, yaml_path=NormOps.yaml_file_path,
+                          dest_folder=self.proj_dir_path, url=url).run()
+            print("Files have been downloaded at the Project Directory")
 
-        elif (self.new_site == 0) and (api is None):
+        elif (self.new_site == 0) and (url is None):
             self.create_proj_dir(proj_dir_name=proj_name)
 
-        elif (self.new_site == 0) and (api is not None):
+        elif (self.new_site == 0) and (url is not None):
             self.create_proj_dir(proj_dir_name=proj_name)
+            try:
+                api.ApiRunner(site_abv=self.site_abv, yaml_path=NormOps.yaml_file_path,
+                              dest_folder=self.proj_dir_path, url=url).run()
+                print("Files have been downloaded at the Project Directory")
+            except Exception as e:
+                print(e)
 
         return self
+
