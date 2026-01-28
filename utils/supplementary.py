@@ -3,6 +3,8 @@
 # ------------------
 
 import os
+import shutil
+
 import yaml
 from pathlib import Path
 
@@ -31,3 +33,45 @@ def create_root_dir():
             yaml.safe_dump(data, f, sort_keys=False)
 
         print("YAML file has been updated with the ROOT Directory")
+
+# C1
+class DealDataFolders:
+    """
+    This class performs the following tasks:
+        1. Locate the Zip Folder in the Project Directory
+        2. Store the directory contents before and after unzipping the data folder
+        3. Extracts the contents of the unzipped folder into the project directory and then the folder is removed.
+    """
+    def __init__(self, proj_dir_path=None):
+        self.b4_unzip_cont = []  # List of Project Directory Contents before unzipping
+        self.af8_unzip_cont = []  # List of Project Directory Contents after unzipping
+
+        self.proj_path = proj_dir_path
+
+        self.unzip_folder_path = None
+
+    def get_proj_dir_contents(self, unzipped=0):
+        if unzipped == 0:
+            self.b4_unzip_cont.extend(os.listdir(self.proj_path))
+
+        elif unzipped == 1:
+            self.af8_unzip_cont.extend(os.listdir(self.proj_path))
+            unzip_folder_name = list(map(str, set(self.af8_unzip_cont).difference(set(self.b4_unzip_cont))))
+            unzip_full_path = os.path.join(self.proj_path, unzip_folder_name[0])
+            self.unzip_folder_path = unzip_full_path
+
+    def extract_from_unzip(self):
+        for f in os.listdir(self.unzip_folder_path):
+            f_path = os.path.join(self.proj_path, f)
+            shutil.move(f_path, self.proj_path)
+
+        # Remove the Now Empty Unzipped Folder
+        os.rmdir(self.unzip_folder_path)
+
+    def run(self, in_proj_dir = 0):
+        if in_proj_dir == 1:
+            self.get_proj_dir_contents()
+            self.extract_from_unzip()
+
+        else:
+            ...

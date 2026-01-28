@@ -7,6 +7,7 @@ from pathlib import Path
 import yaml
 
 from utils import api
+from utils import supplementary as sp
 
 class NormOps:
     """
@@ -100,9 +101,12 @@ class NormOps:
         if (self.new_site == 1) and (url is not None):
             self.create_site_dir()
             self.create_proj_dir(proj_dir_name=proj_name)
+            # API Related
             api.ApiRunner(site_abv=self.site_abv, yaml_path=NormOps.yaml_file_path,
                           dest_folder=self.proj_dir_path, url=url).run()
             print("Files have been downloaded at the Project Directory")
+            # ZIP Folders Related
+            sp.DealDataFolders(proj_dir_path=self.proj_dir_path).run(in_proj_dir=1)
 
         elif (self.new_site == 0) and (url is None):
             self.create_proj_dir(proj_dir_name=proj_name)
@@ -113,6 +117,9 @@ class NormOps:
                 api.ApiRunner(site_abv=self.site_abv, yaml_path=NormOps.yaml_file_path,
                               dest_folder=self.proj_dir_path, url=url).run()
                 print("Files have been downloaded at the Project Directory")
+                # ZIP Folders Related
+                sp.DealDataFolders(proj_dir_path=self.proj_dir_path).run(in_proj_dir=1)
+
             except Exception as e:
                 print(e)
 
