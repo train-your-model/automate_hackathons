@@ -9,3 +9,6 @@
 
 # Custom Environment
 /.venv
+
+# Temp FOlders
+/Tabular_Regression

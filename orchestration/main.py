@@ -1,6 +1,6 @@
-# ------------------
+# -------
 # IMPORTS
-# ------------------
+# -------
 import argparse
 import sys
 
@@ -8,9 +8,9 @@ from utils import set_ups as st
 from utils import supplementary as sp
 from utils import operations as op
 
-# ------------------
+# --------
 # PARSING
-# ------------------
+# --------
 def build_parser():
     p = argparse.ArgumentParser(
         prog="Setting-up Directories, Pipelines for automating the Hackathon as much as possible",
