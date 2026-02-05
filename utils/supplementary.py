@@ -7,6 +7,7 @@ import shutil
 import numpy as np
 import yaml
 from pathlib import Path
+from zipfile import ZipFile
 
 
 # F1
@@ -34,9 +35,6 @@ def create_root_dir():
 
         print("YAML file has been updated with the ROOT Directory")
 
-# F2
-
-
 # C1
 class DealDataFolders:
     """
@@ -52,17 +50,55 @@ class DealDataFolders:
         self.proj_path = proj_dir_path
         self.default_folder = default_folder
 
+        self.projdir_cont: list = []
+        self.data_folder: str = ""
+
+        self.zipped_folder_path: str = ""
         self.unzip_folder_path = None
 
-    def get_proj_dir_contents(self, unzipped=0):
-        if unzipped == 0:
-            self.b4_unzip_cont.extend(os.listdir(self.proj_path))
+    def check_for_zip_folders(self):
+        """
+        At this point, the newly created project directory only consists of Data Folders.
+        """
+        self.b4_unzip_cont = os.listdir(self.proj_path)
+        for f in self.b4_unzip_cont:
+            if f.endswith('.zip'):
+                self.zipped_folder_path = os.path.join(self.proj_path, f)
 
-        elif unzipped == 1:
-            self.af8_unzip_cont.extend(os.listdir(self.proj_path))
-            unzip_folder_name = list(map(str, set(self.af8_unzip_cont).difference(set(self.b4_unzip_cont))))
-            unzip_full_path = os.path.join(self.proj_path, unzip_folder_name[0])
-            self.unzip_folder_path = unzip_full_path
+            else:
+                self.projdir_cont.append(f)
+
+    def check_for_data_folder(self):
+        """
+        Used for cases, where there is NO zipped data folders, but there is presence of a directory with data files
+        """
+        for f in self.projdir_cont:
+            f_path = os.path.join(self.proj_path, f)
+            if os.path.isdir(f_path):
+                self.data_folder = f_path
+
+    def extract_contents(self):
+        print("Contents of the Project Directory: ", end="\n")
+        print(f"{self.data_folder}")
+        user_input = int(input("Do you want to extract contents from the dir? 1/0: "))
+        # Expects Only Directory to be present
+        if user_input == 1:
+            for f in os.listdir(self.data_folder):
+                shutil.move(os.path.join(self.proj_path, f), self.proj_path)
+
+            # Remove Directory
+            os.rmdir(self.data_folder)
+
+    def unzip_folder(self):
+        z = ZipFile(self.zipped_folder_path)
+        z.extractall(path=self.proj_path)
+        z.close()
+
+    def get_proj_dir_contents(self):
+        self.af8_unzip_cont.extend(os.listdir(self.proj_path))
+        unzip_folder_name = list(map(str, set(self.af8_unzip_cont).difference(set(self.b4_unzip_cont))))
+        unzip_full_path = os.path.join(self.proj_path, unzip_folder_name[0])
+        self.unzip_folder_path = unzip_full_path
 
     def extract_from_unzip(self):
         for f in os.listdir(self.unzip_folder_path):
@@ -72,13 +108,15 @@ class DealDataFolders:
         # Remove the Now Empty Unzipped Folder
         os.rmdir(self.unzip_folder_path)
 
-    def run(self, in_proj_dir = 0):
-        if in_proj_dir == 1:
+    def run(self):
+        self.check_for_zip_folders()
+        if len(self.projdir_cont) != 0:
+            self.check_for_data_folder()
+            self.extract_contents()
+        else:
+            self.unzip_folder()
             self.get_proj_dir_contents()
             self.extract_from_unzip()
-
-        else:
-            ...
 
 # C2
 class CheckMultiRecord:

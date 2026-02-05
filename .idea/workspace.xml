@@ -5,15 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="56c23b46-600d-4127-8357-578dfe9f7803" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Tabular_Classification/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tabular_Classification/classification.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tabular_Regression/Regression.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Tabular_Regression/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_24_01_2026_22_06_[Changes]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_24_01_2026_22_06__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/orchestration/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/orchestration/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/operations.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/operations.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/supplementary.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/supplementary.py" afterDir="false" />
     </list>

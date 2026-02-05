@@ -106,7 +106,7 @@ class NormOps:
                           dest_folder=self.proj_dir_path, url=url).run()
             print("Files have been downloaded at the Project Directory")
             # ZIP Folders Related
-            sp.DealDataFolders(proj_dir_path=self.proj_dir_path).run(in_proj_dir=1)
+            sp.DealDataFolders(proj_dir_path=self.proj_dir_path).run()
 
         elif (self.new_site == 0) and (url is None):
             self.create_proj_dir(proj_dir_name=proj_name)
@@ -118,7 +118,7 @@ class NormOps:
                               dest_folder=self.proj_dir_path, url=url).run()
                 print("Files have been downloaded at the Project Directory")
                 # ZIP Folders Related
-                sp.DealDataFolders(proj_dir_path=self.proj_dir_path).run(in_proj_dir=1)
+                sp.DealDataFolders(proj_dir_path=self.proj_dir_path).run()
 
             except Exception as e:
                 print(e)
