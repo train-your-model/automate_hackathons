@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import numpy as np
 
-from utils import supplementary as sp
+from Tabular_Classification import supplementary as sp
 
 # F1
 def with_explore(func):
@@ -35,6 +35,19 @@ def with_explore(func):
         print(self.integer_list)
         print(self.object_list)
         print(self.float_list)
+
+        self.multi_record = sp.CheckMultiRecord(df=self.train_df,
+                                                pred_lst=self.object_list)
+        self.multi_record.run()
+
+        # Multi-Record Predictors
+        self.multi_record_preds = self.multi_record.multi_record_pred
+        if len(self.multi_record_preds) != 0:
+            print("List of Predictors with Multiple Records: ", end="\n")
+            print(self.multi_record_preds)
+
+        else:
+            print("There is NO presence of Predictors having Multiple Record for a single record.")
 
         return dataframe
     return wrapper
