@@ -5,11 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="56c23b46-600d-4127-8357-578dfe9f7803" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Tabular_Classification/supplementary.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Tabular_Classification/classification.py" beforeDir="false" afterPath="$PROJECT_DIR$/Tabular_Classification/classification.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/Tabular_Classification.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/templates/Tabular_Classification.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/supplementary.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/supplementary.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tabular_Classification/supplementary.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
