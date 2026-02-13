@@ -30,22 +30,35 @@ def with_explore(func):
         self.float_list = self.explorer.flt_pred_lst
 
         print("Lists of Predictors based on their dtypes: ", "\n")
-        print(self.integer_list)
-        print(self.object_list)
-        print(self.float_list)
+        print("Lists of Integer Dtype Predictors: ")
+        print(self.integer_list, "\n")
+        print("Lists of Object Dtype Predictors: ")
+        print(self.object_list, "\n")
+        print("Lists of Float Dtype Predictors: ")
+        print(self.float_list, "\n")
 
         self.multi_record = CheckMultiRecord(df=self.train_df,
-                                                pred_lst=self.object_list)
+                                             pred_lst=self.object_list)
         self.multi_record.run()
 
         # Multi-Record Predictors
-        self.multi_record_preds = self.multi_record.multi_record_pred
-        if len(self.multi_record_preds) != 0:
+        if self.multi_record.multi_record_pred is not None:
             print("List of Predictors with Multiple Records: ", end="\n")
-            print(self.multi_record_preds)
-
+            print(self.multi_record.multi_record_pred)
         else:
             print("There is NO presence of Predictors having Multiple Record for a single record.")
+
+        # Checking Outliers
+        self.outlier = HandleNumbers(df=self.train_df,
+                                     int_dtype=self.integer_list,
+                                     flt_dtype=self.float_list)
+        self.outlier.run()
+        if len(self.outlier.predictors_with_outliers)!=0:
+            print("Presence of Outliers in the Numerical Predictors")
+            print(self.outlier.predictors_with_outliers)
+
+        else:
+            print("NO Outlier Present")
 
         return dataframe
     return wrapper
@@ -54,8 +67,8 @@ def with_explore(func):
 def with_preprocess(func):
     def wrapper(self, *args, **kwargs):
 
-        # Create DataFrame
-        dataframe = func(self, *args, **kwargs)
+        # Base Pipeline Execution
+        func(self, *args, **kwargs)
 
         # Precondition
         if self.train_df is None:
@@ -155,9 +168,9 @@ class CreateDF:
         # Optional Assignment
         if self.sub_f_pres == 1:
             self.sub_df = reader(self.sub_f_name)
-            print("Submission File is also present")
+            print("Submission File is also present", end="\n")
 
-        print(f"Dataframes Loaded Successfully!!")
+        print(f"Dataframes Loaded Successfully!!", end="\n")
 
     def sanity_check(self):
         """
@@ -166,7 +179,7 @@ class CreateDF:
         if self.train_df is None or self.train_df.empty:
             raise Exception("DataFrame Assignment was NOT successful")
 
-        print("Sanity Check passed: train_df is loaded")
+        print("Sanity Check passed: train_df is loaded", end="\n")
 
     @with_preprocess
     @with_explore
@@ -196,10 +209,14 @@ class BasicExplore:
         self.has_duplicates: bool = False
         self.target_variable_idx: int = 0
         self.has_nan_pred: bool = False
+
         # Dtype Categorized Lists
         self.int_pred_lst = []
         self.obj_pred_lst = []
         self.flt_pred_lst = []
+
+        # Target Variable Explanation
+        self.targ_var_expl = dict()
 
     def establish_target_idx(self):
         print(list(zip(range(len(self.train_df)), self.train_df.columns)))
@@ -220,6 +237,12 @@ class BasicExplore:
         if nan_present != 0:
             self.has_nan_pred = True
             print("DataFrame contains NaN Values")
+
+            if self.train_df.iloc[:, self.target_variable_idx].isna().any():
+                self.targ_var_expl.update({"Missing Values": "True"})
+            else:
+                self.targ_var_expl.update({"Missing Values": "False"})
+
         else:
             print("DataFrame is FREE of NaN Values")
 
@@ -251,11 +274,19 @@ class BasicExplore:
         non_empty = (lst for lst in lists if len(lst) > 0)
         return next(non_empty, default)
 
+    def target_var_summary(self):
+        """
+        Checks for the presence of the predictor variable in different case-specific lists
+        """
+        print("\n")
+        print(self.targ_var_expl)
+
     def run(self):
         self.establish_target_idx()
         self.check_dupl_rows()
         self.check_na()
         self.dtype_categorize()
+        self.target_var_summary()
         return self
 
 class BasicPreprocess:
@@ -307,6 +338,8 @@ class BasicPreprocess:
         if len(self.rej_miss_vars) != 0:
             self.df.drop(columns=self.rej_miss_vars, inplace=True)
 
+        return self.df
+
 class CheckMultiRecord:
 
     def __init__(self, df, pred_lst: list):
@@ -323,14 +356,51 @@ class CheckMultiRecord:
             if split_row_max > 1:
                 self.split_w_comma.append(col)
 
-    @staticmethod
-    def multi_record(*lists, default=None):
+    def multi_record(self, *lists, default=None):
         non_empty = (lst for lst in lists if len(lst) > 0)
         return next(non_empty, default)
 
     def run(self):
         self.multi_record_w_comma()
 
-        self.multi_record_pred = CheckMultiRecord(self.split_w_comma,
-                                                  self.split_w_spaces)
+        self.multi_record_pred = self.multi_record(self.split_w_comma,
+                                                   self.split_w_spaces)
         return self
+
+
+class HandleNumbers:
+    """
+    Handles preprocessing related to Integer / Float dtypes
+    """
+
+    def __init__(self, df, int_dtype: list, flt_dtype: list):
+        self.df = df
+        self.int_dtype = int_dtype
+        self.flt_dtype = flt_dtype
+
+        # Returning Lists
+        self.predictors_with_outliers = []
+
+    def check_outliers(self):
+        """
+        Checks the presence of outliers in numeric predictors.
+        Outliers will be determined using the IQR technique
+
+        :return: A class list containing the names of the predictors with outliers
+        """
+        for col in self.int_dtype + self.flt_dtype:
+            q1, q3 = np.percentile(np.array(self.df[col]), [25, 75])
+            iqr = q3 - q1
+            lower_bound = q1 - (iqr * 1.5)
+            upper_bound = q3 + (iqr * 1.5)
+            outlier_sum = sum(np.where((np.array(self.df[col]) > upper_bound) | (np.array(self.df[col]) < lower_bound),
+                                       1, 0))
+            if outlier_sum != 0:
+                self.predictors_with_outliers.append(col)
+
+    def run(self):
+        self.check_outliers()
+        if len(self.predictors_with_outliers) != 0:
+            print("Presence of Outliers in the Numerical Predictors")
+        else:
+            print("NO outlier present")

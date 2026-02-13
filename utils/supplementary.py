@@ -121,29 +121,3 @@ class DealDataFolders:
 # C2
 
 
-class HandleNumbers:
-    """
-    Handles preprocessing related to Integer / Float dtypes
-    """
-    def __init__(self, df, int_dtype: list, flt_dtype: list):
-        self.df = df
-        self.int_dtype = int_dtype
-        self.flt_dtype = flt_dtype
-        self.predictors_with_outliers = []
-
-    def check_outliers(self):
-        """
-        Checks the presence of outliers in numeric predictors.
-        Outliers will be determined using the IQR technique
-
-        :return: A class list containing the names of the predictors with outliers
-        """
-        for col in self.int_dtype + self.flt_dtype:
-            q1, q3 = np.percentile(np.array(self.df[col]), [25, 75])
-            iqr = q3 - q1
-            lower_bound = q1 - (iqr * 1.5)
-            upper_bound = q3 + (iqr * 1.5)
-            outlier_sum = sum(np.where((np.array(self.df[col]) > upper_bound) | (np.array(self.df[col]) < lower_bound),
-                                       1, 0))
-            if outlier_sum != 0:
-                self.predictors_with_outliers.append(col)
