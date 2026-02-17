@@ -5,6 +5,8 @@ import re
 import os
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # F1
 def with_explore(func):
@@ -400,7 +402,26 @@ class HandleNumbers:
 
     def run(self):
         self.check_outliers()
-        if len(self.predictors_with_outliers) != 0:
-            print("Presence of Outliers in the Numerical Predictors")
-        else:
-            print("NO outlier present")
+
+class Visualize:
+
+    def __init__(self, df, outliers_pred: list = None):
+        self.df = df # At this point, the dataframe is expected to have preprocessed
+        self.outliers_preds = outliers_pred # List containing predictors with outliers generated during Basic Exploration
+
+    def outliers(self):
+        lowered_pred_names = [x.lower() for x in self.outliers_preds]
+
+        for col in lowered_pred_names:
+            fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+
+            sns.histplot(self.df[col], kde=True, ax=ax[0])
+            ax[0].set_title(f"{col} Distribution")
+
+            sns.boxplot(x=self.df[col], ax=ax[1])
+            ax[1].set_title(f"{col} Boxplot")
+
+            plt.tight_layout()
+            plt.show()
+
+    

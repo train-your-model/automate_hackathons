@@ -117,7 +117,3 @@ class DealDataFolders:
             self.unzip_folder()
             self.get_proj_dir_contents()
             self.extract_from_unzip()
-
-# C2
-
-
