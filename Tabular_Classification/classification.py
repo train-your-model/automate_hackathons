@@ -8,6 +8,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from sklearn.metrics import (roc_auc_score,accuracy_score,f1_score)
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+
 # F1
 def with_explore(func):
     def wrapper(self, *args, **kwargs):
@@ -424,4 +432,179 @@ class Visualize:
             plt.tight_layout()
             plt.show()
 
-    
+class MetricRegistry:
+    """
+    Holds metric functions per problem type.
+    """
+
+    REGISTRY = {
+        "binary": {
+            "roc_auc": lambda y, y_prob: roc_auc_score(y, y_prob),
+            "accuracy": lambda y, y_pred: accuracy_score(y, y_pred),
+            "f1": lambda y, y_pred: f1_score(y, y_pred)
+        },
+        "multiclass": {
+            "accuracy": lambda y, y_pred: accuracy_score(y, y_pred),
+            "f1_macro": lambda y, y_pred: f1_score(y, y_pred, average="macro")
+        }
+    }
+
+    @classmethod
+    def get(cls, problem_type: str):
+        return cls.REGISTRY[problem_type]
+
+class ClassifierFactory:
+    """
+    Returns a classifier based on problem type.
+    """
+
+    @staticmethod
+    def get(problem_type: str):
+        if problem_type == "binary":
+            return LogisticRegression(max_iter=1000)
+        elif problem_type == "multiclass":
+            return LogisticRegression(
+                max_iter=1000,
+                solver="lbfgs"
+            )
+        else:
+            raise ValueError(f"Unsupported problem type: {problem_type}")
+
+class BaseClassifier:
+
+    def __init__(self, df):
+        self.df = df
+        self.target_name = None
+        self.problem_type = None
+        self.model = None
+        self.metrics = None
+
+    def establish_target(self):
+        print(list(zip(range(len(self.df.columns)), self.df.columns)))
+        idx = int(input("Enter target column index: "))
+        self.target_name = self.df.columns[idx]
+
+    def infer_problem_type(self, y):
+        n_unique = y.nunique()
+
+        if n_unique == 2:
+            return "binary"
+        elif n_unique > 2:
+            return "multiclass"
+        else:
+            raise ValueError("Target variable has only one unique value")
+
+    def __call__(self, test_size=0.2, random_state=42):
+
+        self.establish_target()
+
+        X = self.df.drop(columns=self.target_name)
+        y = self.df[self.target_name]
+
+        self.problem_type = self.infer_problem_type(y)
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=random_state
+        )
+
+        # Model dispatch
+        self.model = ClassifierFactory.get(self.problem_type)
+        self.model.fit(X_train, y_train)
+
+        # Predictions
+        y_pred = self.model.predict(X_test)
+
+        # Probabilities only for binary AUC
+        y_prob = None
+        if self.problem_type == "binary" and hasattr(self.model, "predict_proba"):
+            y_prob = self.model.predict_proba(X_test)[:, 1]
+
+        # Metric dispatch
+        self.metrics = MetricRegistry.get(self.problem_type)
+
+        print(f"\nProblem type detected: {self.problem_type}\n")
+
+        for name, fn in self.metrics.items():
+            if "roc_auc" in name:
+                score = fn(y_test, y_prob)
+            else:
+                score = fn(y_test, y_pred)
+
+            print(f"{name}: {round(score, 4)}")
+
+class CommonFE:
+    """
+    This class deals with functions that perform most common feature engineering transformations.
+    """
+
+    def check_imbalances(df, col):
+        val_counts = df[col].value_counts()
+
+        if len(val_counts) < 2:
+            raise ValueError("Imbalance ratio requires at least 2 classes")
+
+        imbalance_ratio = round(val_counts.max() / val_counts.min(), 2)
+
+        match imbalance_ratio:
+            case r if r < 1.5:
+                print('{severity: balanced, action: no action needed}')
+            case r if 1.5 <= r < 3:
+                print("{severity: mild, action: use class_weight}")
+            case r if 3 <= r < 10:
+                print("{severity: severe, action: class_weight + threshold tuning}")
+            case r if r >= 10:
+                print("{severity: extreme, action: PR-AUC, SMOTE, anomaly-style modeling}")
+
+class ClassifierBenchmark:
+    def __init__(self, metric: str = "f1", test_size: float = 0.2, random_state: int = 42):
+        self.metric = metric
+        self.test_size = test_size
+        self.random_state = random_state
+        self.results_ = []
+
+    def _get_models(self):
+        return {
+            "logistic": LogisticRegression(class_weight="balanced", max_iter=1000),
+            "naive_bayes": GaussianNB(),
+            "svm": SVC(class_weight="balanced", probability=True),
+            "decision_tree": DecisionTreeClassifier(class_weight="balanced"),
+            "random_forest": RandomForestClassifier(class_weight="balanced")
+        }
+
+    def _score(self, y_true, y_pred, y_prob=None):
+        if self.metric == "f1":
+            return f1_score(y_true, y_pred)
+        if self.metric == "roc_auc":
+            return roc_auc_score(y_true, y_prob)
+        raise ValueError("Unsupported metric")
+
+    def run(self, df, target):
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y,
+            test_size=self.test_size,
+            stratify=y,
+            random_state=self.random_state
+        )
+
+        for name, model in self._get_models().items():
+            model.fit(X_train, y_train)
+
+            y_pred = model.predict(X_test)
+            y_prob = (
+                model.predict_proba(X_test)[:, 1]
+                if hasattr(model, "predict_proba")
+                else None
+            )
+
+            score = self._score(y_test, y_pred, y_prob)
+
+            self.results_.append({
+                "model": name,
+                "metric": self.metric,
+                "score": score
+            })
+
+        return sorted(self.results_, key=lambda x: x["score"], reverse=True)
