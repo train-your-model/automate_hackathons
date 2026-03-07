@@ -84,7 +84,7 @@ class DealDataFolders:
         # Expects Only Directory to be present
         if user_input == 1:
             for f in os.listdir(self.data_folder):
-                shutil.move(os.path.join(self.proj_path, f), self.proj_path)
+                shutil.move(os.path.join(self.data_folder, f), self.proj_path)
 
             # Remove Directory
             os.rmdir(self.data_folder)
@@ -95,14 +95,20 @@ class DealDataFolders:
         z.close()
 
     def get_proj_dir_contents(self):
-        self.af8_unzip_cont.extend(os.listdir(self.proj_path))
-        unzip_folder_name = list(map(str, set(self.af8_unzip_cont).difference(set(self.b4_unzip_cont))))
-        unzip_full_path = os.path.join(self.proj_path, unzip_folder_name[0])
-        self.unzip_folder_path = unzip_full_path
+        after = set(os.listdir(self.proj_path))
+        before = set(self.b4_unzip_cont)
+
+        new_items = list(after - before)
+
+        if len(new_items) == 1:
+            self.unzip_folder_path = os.path.join(self.proj_path, new_items[0])
+        else:
+            # ZIP extracted multiple items directly
+            self.unzip_folder_path = self.proj_path
 
     def extract_from_unzip(self):
         for f in os.listdir(self.unzip_folder_path):
-            f_path = os.path.join(self.proj_path, f)
+            f_path = os.path.join(self.unzip_folder_path, f)
             shutil.move(f_path, self.proj_path)
 
         # Remove the Now Empty Unzipped Folder
