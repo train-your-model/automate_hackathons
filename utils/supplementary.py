@@ -95,16 +95,10 @@ class DealDataFolders:
         z.close()
 
     def get_proj_dir_contents(self):
-        after = set(os.listdir(self.proj_path))
-        before = set(self.b4_unzip_cont)
-
-        new_items = list(after - before)
-
-        if len(new_items) == 1:
-            self.unzip_folder_path = os.path.join(self.proj_path, new_items[0])
-        else:
-            # ZIP extracted multiple items directly
-            self.unzip_folder_path = self.proj_path
+        self.af8_unzip_cont.extend(os.listdir(self.proj_path))
+        unzip_folder_name = list(map(str, set(self.af8_unzip_cont).difference(set(self.b4_unzip_cont))))
+        unzip_full_path = os.path.join(self.proj_path, unzip_folder_name[0])
+        self.unzip_folder_path = unzip_full_path
 
     def extract_from_unzip(self):
         for f in os.listdir(self.unzip_folder_path):
