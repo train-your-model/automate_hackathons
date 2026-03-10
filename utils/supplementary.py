@@ -1,14 +1,12 @@
 # ------------------
 # IMPORTS
 # ------------------
-
 import os
 import shutil
 import numpy as np
 import yaml
 from pathlib import Path
 from zipfile import ZipFile
-
 
 # F1
 def create_root_dir():
@@ -39,81 +37,73 @@ def create_root_dir():
 class DealDataFolders:
     """
     This class performs the following tasks:
-        1. Locate the Zip Folder in the Project Directory
-        2. Store the directory contents before and after unzipping the data folder
-        3. Extracts the contents of the unzipped folder into the project directory and then the folder is removed.
+        1. Locate the Zip Folder in the Project Directory, Unzip, Extract the Contents, Remove the empty folder.
     """
-    def __init__(self, proj_dir_path=None, default_folder=None):
-        self.b4_unzip_cont = []  # List of Project Directory Contents before unzipping
-        self.af8_unzip_cont = []  # List of Project Directory Contents after unzipping
 
-        self.proj_path = proj_dir_path
-        self.default_folder = default_folder
+    def __init__(self, project_dir: str, delete_zip: bool = False):
+        self.project_dir = Path(project_dir).resolve()
+        self.delete_zip = delete_zip
 
-        self.projdir_cont: list = []
-        self.data_folder: str = ""
+        if not self.project_dir.exists():
+            raise FileNotFoundError(f"{self.project_dir} does not exist")
 
-        self.zipped_folder_path: str = ""
-        self.unzip_folder_path = None
+    def _zip_files(self):
+        return list(self.project_dir.glob("*.zip"))
 
-    def check_for_zip_folders(self):
-        """
-        At this point, the newly created project directory only consists of Data Folders.
-        """
-        self.b4_unzip_cont = os.listdir(self.proj_path)
-        for f in self.b4_unzip_cont:
-            if f.endswith('.zip'):
-                self.zipped_folder_path = os.path.join(self.proj_path, f)
+    def _extract_archives(self):
+        for zip_file in self._zip_files():
 
-            else:
-                self.projdir_cont.append(f)
+            with ZipFile(zip_file, "r") as z:
+                z.extractall(self.project_dir)
 
-    def check_for_data_folder(self):
-        """
-        Used for cases, where there is NO zipped data folders, but there is presence of a directory with data files
-        """
-        for f in self.projdir_cont:
-            f_path = os.path.join(self.proj_path, f)
-            if os.path.isdir(f_path):
-                self.data_folder = f_path
+            if self.delete_zip:
+                zip_file.unlink()
 
-    def extract_contents(self):
-        print("Contents of the Project Directory: ", end="\n")
-        print(f"{self.data_folder}")
-        user_input = int(input("Do you want to extract contents from the dir? 1/0: "))
-        # Expects Only Directory to be present
-        if user_input == 1:
-            for f in os.listdir(self.data_folder):
-                shutil.move(os.path.join(self.data_folder, f), self.proj_path)
+    def _structure(self):
+        items = [
+            p for p in self.project_dir.iterdir()
+            if not p.name.endswith(".zip")
+        ]
 
-            # Remove Directory
-            os.rmdir(self.data_folder)
+        files = [p for p in items if p.is_file()]
+        dirs = [p for p in items if p.is_dir()]
 
-    def unzip_folder(self):
-        z = ZipFile(self.zipped_folder_path)
-        z.extractall(path=self.proj_path)
-        z.close()
+        return files, dirs
 
-    def get_proj_dir_contents(self):
-        self.af8_unzip_cont.extend(os.listdir(self.proj_path))
-        unzip_folder_name = list(map(str, set(self.af8_unzip_cont).difference(set(self.b4_unzip_cont))))
-        unzip_full_path = os.path.join(self.proj_path, unzip_folder_name[0])
-        self.unzip_folder_path = unzip_full_path
+    def _flatten(self, directory: Path):
+        for item in directory.iterdir():
+            dest = self.project_dir / item.name
 
-    def extract_from_unzip(self):
-        for f in os.listdir(self.unzip_folder_path):
-            f_path = os.path.join(self.unzip_folder_path, f)
-            shutil.move(f_path, self.proj_path)
+            if dest.exists():
+                raise FileExistsError(
+                    f"Cannot move {item.name}, destination exists"
+                )
 
-        # Remove the Now Empty Unzipped Folder
-        os.rmdir(self.unzip_folder_path)
+            shutil.move(str(item), str(dest))
+
+        directory.rmdir()
+
+    def _normalize_structure(self):
+        files, dirs = self._structure()
+
+        # Files already independent → stop
+        if files:
+            return "Files already present at project root."
+
+        # Single directory → flatten
+        if len(dirs) == 1:
+            self._flatten(dirs[0])
+            return f"Flattened directory: {dirs[0].name}"
+
+        # Ambiguous case
+        if len(dirs) > 1:
+            return "Multiple directories detected. Manual inspection required."
+
+        return "No files detected."
 
     def run(self):
-        self.check_for_zip_folders()
-        if len(self.projdir_cont) != 0:
-            self.check_for_data_folder()
-            self.extract_contents()
-        else:
-            self.unzip_folder()
-            self.get_proj_dir_contents()
-            self.extract_from_unzip()
+
+        if self._zip_files():
+            self._extract_archives()
+
+        return self._normalize_structure()
